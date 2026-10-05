@@ -1,0 +1,1659 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Hanuman Enterprise – Invoice Manager</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0f172a;
+  --bg-stage: #1e293b;
+  --panel: #1e293b;
+  --panel-card: #334155;
+  --tx: #f8fafc;
+  --tx-muted: #94a3b8;
+  --bd: #475569;
+  --ac: #2563eb;
+  --ac-hover: #1d4ed8;
+  --acx: #ffffff;
+  --success: #16a34a;
+  --danger: #dc2626;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: var(--bg);
+  color: var(--tx);
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Header */
+header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 24px;
+  background: var(--panel);
+  border-bottom: 1px solid var(--bd);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.brand-icon {
+  width: 38px;
+  height: 38px;
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  color: #fff;
+  font-size: 18px;
+  box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
+}
+.brand h1 {
+  font-size: 17px;
+  font-weight: 700;
+}
+.brand small {
+  display: block;
+  font-weight: 500;
+  color: var(--tx-muted);
+  font-size: 12px;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+button {
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid var(--bd);
+  background: var(--panel-card);
+  color: var(--tx);
+  padding: 8px 14px;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.15s ease;
+}
+button:hover {
+  background: var(--bd);
+  transform: translateY(-1px);
+}
+button:active {
+  transform: translateY(0);
+}
+button.primary {
+  background: #dc2626;
+  color: #ffffff;
+  border-color: #b91c1c;
+  box-shadow: 0 2px 8px rgba(220, 38, 38, 0.3);
+}
+button.primary:hover {
+  background: #b91c1c;
+}
+button.bulk-btn {
+  background: #7c3aed;
+  color: #ffffff;
+  border-color: #6d28d9;
+  box-shadow: 0 2px 8px rgba(124, 58, 237, 0.3);
+}
+button.bulk-btn:hover {
+  background: #6d28d9;
+}
+button.success {
+  background: var(--success);
+  color: #ffffff;
+  border-color: #15803d;
+}
+button.success:hover {
+  background: #15803d;
+}
+button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Layout */
+main {
+  flex: 1;
+  display: grid;
+  gap: 20px;
+  padding: 20px;
+  max-width: 1480px;
+  width: 100%;
+  margin: 0 auto;
+}
+@media (min-width: 1024px) {
+  main {
+    grid-template-columns: 1fr 360px;
+    align-items: start;
+  }
+}
+
+/* Stage & Preview */
+#stage-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: var(--bg-stage);
+  padding: 24px 16px;
+  border-radius: 12px;
+  border: 1px solid var(--bd);
+  overflow: hidden;
+}
+.stage-toolbar {
+  width: 100%;
+  max-width: 794px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  font-size: 13px;
+  color: var(--tx-muted);
+}
+.badge {
+  background: rgba(37, 99, 235, 0.15);
+  color: #60a5fa;
+  border: 1px solid rgba(37, 99, 235, 0.3);
+  padding: 3px 8px;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 600;
+}
+#stage {
+  overflow: auto;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+#wrap {
+  margin: 0 auto;
+}
+#scaler {
+  transform-origin: top center;
+  width: 794px;
+}
+
+/* Sidebar */
+aside {
+  background: var(--panel);
+  border: 1px solid var(--bd);
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-height: calc(100vh - 90px);
+  position: sticky;
+  top: 75px;
+}
+aside h2 {
+  font-size: 15px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.search-box {
+  position: relative;
+}
+#q {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid var(--bd);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--tx);
+  font-size: 13px;
+  outline: none;
+}
+#q:focus {
+  border-color: var(--ac);
+}
+
+.selection-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12px;
+  color: var(--tx-muted);
+  padding: 4px 2px;
+  border-bottom: 1px solid var(--bd);
+}
+.selection-toolbar button {
+  padding: 3px 8px;
+  font-size: 11px;
+}
+
+#list {
+  overflow-y: auto;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 220px;
+  max-height: 480px;
+}
+.invoice-card {
+  border: 1px solid var(--bd);
+  border-radius: 8px;
+  padding: 8px 10px;
+  background: var(--panel-card);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  transition: all 0.15s;
+}
+.invoice-card:hover {
+  border-color: #f59e0b;
+}
+.invoice-card.active {
+  border-color: #f59e0b;
+  background: rgba(245, 158, 11, 0.12);
+}
+.invoice-checkbox {
+  cursor: pointer;
+  width: 16px;
+  height: 16px;
+  accent-color: #7c3aed;
+}
+.invoice-card-info {
+  flex: 1;
+  min-width: 0;
+}
+.invoice-card-info b {
+  display: block;
+  font-size: 13px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--tx);
+}
+.invoice-card-info span {
+  font-size: 11px;
+  color: var(--tx-muted);
+}
+.invoice-card-actions button {
+  padding: 4px 6px;
+  font-size: 11px;
+}
+
+.sidebar-footer {
+  border-top: 1px solid var(--bd);
+  padding-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.bulk-export-btn {
+  width: 100%;
+  padding: 10px 14px;
+  font-size: 13px;
+  justify-content: center;
+}
+
+/* Toast */
+#toast {
+  position: fixed;
+  left: 50%;
+  bottom: 24px;
+  transform: translateX(-50%) translateY(20px);
+  background: #0f172a;
+  color: #fff;
+  border: 1px solid #334155;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  opacity: 0;
+  pointer-events: none;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  z-index: 1000;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.4);
+}
+#toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* =========================================================
+   EXACT INVOICE SHEET (A4 Dimensions: 794px x 1123px)
+   CONTINUOUS STRAIGHT VERTICAL LINES FROM TOP TO BOTTOM
+   ========================================================= */
+#sheet {
+  width: 794px;
+  height: 1123px;
+  min-height: 1123px;
+  max-height: 1123px;
+  background: #ffffff !important;
+  color: #000000 !important;
+  font-family: Arial, Helvetica, sans-serif !important;
+  padding: 75px 50px 50px 50px;
+  box-sizing: border-box;
+  position: relative;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.35);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: geometricPrecision;
+  overflow: hidden;
+}
+
+/* Printable / Export Header Elements */
+.sheet-header {
+  text-align: center;
+  margin-bottom: 6px;
+  width: 100%;
+}
+.ti {
+  text-align: center;
+  font-size: 14.5px;
+  font-weight: 500;
+  text-decoration: underline;
+  color: #000000;
+  margin-bottom: 2px;
+}
+.co {
+  text-align: center;
+  font-family: 'Rockwell', 'Clarendon', 'Bookman Old Style', 'Georgia', serif;
+  font-weight: 900;
+  font-size: 34px;
+  line-height: 1.15;
+  letter-spacing: 0.5px;
+  color: #000000;
+  margin: 4px 0 2px;
+  text-transform: uppercase;
+}
+.pr {
+  text-align: center;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: #000000;
+  margin-bottom: 6px;
+}
+.hr {
+  border-top: 1.8px solid #000000;
+  margin: 8px 0;
+  width: 100%;
+}
+.ad {
+  text-align: center;
+  font-size: 12px;
+  line-height: 16.5px;
+  color: #000000;
+}
+
+/* Rounded Invoice Box (Width: 694px inside 794px sheet) */
+.fr {
+  margin-top: 10px;
+  border: 1.8px solid #000000;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #ffffff;
+  width: 100%;
+}
+
+/* Top Section: M/s vs Bill No */
+.top {
+  display: grid;
+  grid-template-columns: 480px 1fr;
+  height: 90px;
+  border-bottom: 1.8px solid #000000;
+}
+.top > .l {
+  border-right: 1.8px solid #000000;
+  padding: 6px 8px 0 8px;
+  font-size: 13.5px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+}
+.ln {
+  display: flex;
+  align-items: flex-end;
+  height: 35px;
+  border-bottom: 1.4px solid #000000;
+  margin-bottom: 6px;
+}
+.ln b {
+  font-size: 14px;
+  font-weight: 700;
+  color: #000000;
+  margin-right: 4px;
+  padding-bottom: 2px;
+}
+.ln .e {
+  flex: 1;
+  padding: 0 4px 2px;
+  color: #000000;
+  font-size: 13.5px;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.top > .r {
+  padding: 12px 14px 0 14px;
+  font-size: 14px;
+}
+.top .r p {
+  margin: 0 0 12px;
+  font-weight: 700;
+  color: #000000;
+  display: flex;
+  align-items: center;
+}
+.top .r span {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #000000;
+  margin-left: 6px;
+  display: inline-block;
+  min-width: 80px;
+}
+
+/* =========================================================
+   TABLE SECTION (Continuous Lines Across Header & Body)
+   Grid columns: 40px | 290px | 75px | 75px | 90px | 124px
+   Dividers at:  40px | 330px | 405px | 480px | 570px
+   ========================================================= */
+.table-box {
+  position: relative;
+  background: #ffffff;
+}
+
+/* Continuous Vertical Lines (Span both Header and Body) */
+.table-box .vl {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 0;
+  border-left: 1.8px solid #000000;
+  pointer-events: none;
+  z-index: 5;
+}
+
+.hd {
+  display: grid;
+  grid-template-columns: 40px 290px 75px 75px 90px 1fr;
+  height: 36px;
+  border-bottom: 1.8px solid #000000;
+  font-weight: 700;
+  font-size: 14px;
+  color: #000000;
+  background: #ffffff;
+  position: relative;
+  z-index: 2;
+}
+.hd div {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  line-height: 14px;
+  /* Note: No border-right here so continuous .vl line draws the boundary seamlessly */
+}
+
+/* Table Body */
+.bd {
+  position: relative;
+  height: 615px;
+  min-height: 615px;
+  padding-bottom: 32px;
+  background: #ffffff;
+  z-index: 2;
+}
+#rows {
+  position: relative;
+}
+.row {
+  display: grid;
+  grid-template-columns: 40px 290px 75px 75px 90px 1fr;
+  position: relative;
+  min-height: 28px;
+  font-size: 13px;
+  color: #000000;
+}
+.row > div {
+  padding: 8px 6px 2px;
+  box-sizing: border-box;
+}
+.row .sr {
+  text-align: center;
+  font-weight: 500;
+}
+.row .d {
+  padding-left: 8px;
+}
+.row .d .t {
+  font-weight: 700;
+  color: #000000;
+  margin-bottom: 2px;
+}
+.row .d .sub {
+  font-weight: 400;
+  color: #000000;
+  font-size: 12.5px;
+}
+.row .hsn {
+  text-align: center;
+}
+.row .q {
+  text-align: center;
+  font-weight: 500;
+}
+.row .r {
+  text-align: center;
+  font-weight: 700;
+  font-size: 13px;
+}
+.row .a {
+  text-align: center;
+  font-weight: 700;
+  font-size: 13px;
+}
+
+.row .x {
+  position: absolute;
+  left: -26px;
+  top: 6px;
+  width: 20px;
+  height: 20px;
+  background: #fee2e2;
+  color: #dc2626;
+  border: 1px solid #f87171;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 0;
+  cursor: pointer;
+  z-index: 10;
+}
+.row .x:hover {
+  background: #dc2626;
+  color: #fff;
+}
+
+.add-btn-wrap {
+  position: relative;
+  z-index: 2;
+  margin: 10px 0 0 46px;
+}
+.btn-add {
+  font-size: 12px;
+  padding: 4px 10px;
+  background: #eff6ff;
+  color: #2563eb;
+  border: 1px dashed #3b82f6;
+  border-radius: 4px;
+}
+.btn-add:hover {
+  background: #2563eb;
+  color: #fff;
+}
+
+/* TOTAL Bar */
+.tot {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 480px;
+  display: grid;
+  grid-template-columns: 90px 1fr;
+  height: 32px;
+  border-top: 1.8px solid #000000;
+  font-weight: 700;
+  background: #ffffff;
+  z-index: 3;
+}
+.tot div {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  color: #000000;
+}
+.tot #total {
+  font-weight: 700;
+}
+
+/* Bottom Footer Section */
+.bt {
+  display: grid;
+  grid-template-columns: 480px 1fr;
+  height: 90px;
+  border-top: 1.8px solid #000000;
+  background: #ffffff;
+}
+.bt .l {
+  border-right: 1.8px solid #000000;
+  padding: 8px 10px;
+  font-size: 13.5px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+.bt .l b {
+  font-size: 14px;
+  font-weight: 700;
+  color: #000000;
+  margin-right: 4px;
+}
+.bt .l #words {
+  font-weight: 500;
+  color: #000000;
+  line-height: 18px;
+}
+.bt .l .u-line {
+  position: absolute;
+  left: 36px;
+  right: 12px;
+  bottom: 24px;
+  border-top: 1.4px solid #000000;
+}
+
+.bt .r {
+  padding: 8px 12px;
+  font-size: 13.5px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  text-align: center;
+}
+.bt .r .for-co {
+  font-size: 13.5px;
+  color: #000000;
+}
+.bt .r .for-co b {
+  font-size: 14.5px;
+  font-weight: 700;
+}
+.bt .r .auth {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #000000;
+  text-align: right;
+  padding-right: 6px;
+  padding-bottom: 2px;
+}
+
+/* Editable field hints & hover */
+[contenteditable] {
+  outline: none;
+  word-break: break-word;
+}
+#sheet:not(.cap) [contenteditable]:hover {
+  background: rgba(254, 240, 138, 0.35);
+  border-radius: 2px;
+}
+#sheet:not(.cap) [contenteditable]:focus {
+  background: rgba(254, 240, 138, 0.7);
+  border-radius: 2px;
+}
+[data-ph]:empty::before {
+  content: attr(data-ph);
+  color: #9ca3af;
+  font-weight: 400;
+}
+.cap [data-ph]:empty::before {
+  content: none !important;
+}
+
+/* Print Stylesheet (Vector Crisp A4 Direct Output) */
+@media print {
+  body {
+    background: #ffffff !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+  header, aside, .stage-toolbar, .noprint, #toast {
+    display: none !important;
+  }
+  main {
+    padding: 0 !important;
+    margin: 0 !important;
+    max-width: none !important;
+    display: block !important;
+  }
+  #stage-container {
+    background: none !important;
+    border: none !important;
+    padding: 0 !important;
+  }
+  #scaler {
+    transform: none !important;
+  }
+  #wrap {
+    width: 100% !important;
+    height: auto !important;
+  }
+  #sheet {
+    box-shadow: none !important;
+    margin: 0 auto !important;
+    padding: 75px 50px 50px 50px !important;
+    width: 794px !important;
+    height: 1123px !important;
+  }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <div class="brand-icon">HE</div>
+    <div>
+      <h1>Hanuman Enterprise <span class="badge">Tax Invoice Pro</span></h1>
+      <small id="db-status">● Storage: Auto-Saved in Browser</small>
+    </div>
+  </div>
+
+  <div class="actions">
+    <button id="bNew">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+      New Bill
+    </button>
+    <button id="bSave" class="success">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+      Save
+    </button>
+    <button id="bPrint">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+      Print / System PDF
+    </button>
+    <button id="bPdf" class="primary">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+      Export PDF (HD)
+    </button>
+    <button id="bBulkHeader" class="bulk-btn">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="2" y="7" width="16" height="14" rx="2"/><path d="M6 3h14a2 2 0 012 2v12"/></svg>
+      Bulk Export PDF
+    </button>
+  </div>
+</header>
+
+<main>
+  <div id="stage-container">
+    <div class="stage-toolbar">
+      <span>📄 Standard A4 Tax Invoice (Click any field to edit)</span>
+      <span id="bill-indicator">Bill No: <b>10</b></span>
+    </div>
+
+    <div id="stage">
+      <div id="wrap">
+        <div id="scaler">
+          <div id="sheet">
+            <!-- Header -->
+            <div class="sheet-header">
+              <div class="ti">Tax Invoice</div>
+              <div class="co">HANUMAN ENTERPRISE</div>
+              <div class="pr">Proprietor - Dharmesh Hansrajbhai Nayak</div>
+              <div class="hr"></div>
+              <div class="ad">Plot No. 39, New G.I.D.C., 52 Hector, Umbergaon, Tal. Umbergaon, Dist. Valsad - 396171, Gujarat.</div>
+              <div class="ad">E-mail :- dhnayak3608@gmail.com &nbsp;●&nbsp; Mob.:- 9227433604</div>
+            </div>
+
+            <!-- Invoice Frame -->
+            <div class="fr">
+              <!-- Top Box: Vendor & Bill Meta -->
+              <div class="top">
+                <div class="l">
+                  <div class="ln">
+                    <b>M/s.</b>
+                    <div class="e" id="vendor" contenteditable="plaintext-only" data-ph="Vendor / Customer Name">Straw Express Exports</div>
+                  </div>
+                  <div class="ln">
+                    <div class="e" id="address" contenteditable="plaintext-only" data-ph="Address / City">G.I.D.C., Umbergaon.</div>
+                  </div>
+                </div>
+                <div class="r">
+                  <p>Bill No.:- <span id="no" contenteditable="plaintext-only">10</span></p>
+                  <p>Date :- <span id="date" contenteditable="plaintext-only">31-01-2027</span></p>
+                </div>
+              </div>
+
+              <!-- Unified Table Box with Continuous Vertical Dividers -->
+              <div class="table-box">
+                <!-- 5 Continuous Straight Vertical Lines Spanning Both Header and Body -->
+                <i class="vl" style="left:40px"></i>
+                <i class="vl" style="left:330px"></i>
+                <i class="vl" style="left:405px"></i>
+                <i class="vl" style="left:480px"></i>
+                <i class="vl" style="left:570px"></i>
+
+                <!-- Table Columns Header -->
+                <div class="hd">
+                  <div>Sr.<br>No.</div>
+                  <div>Description</div>
+                  <div>HSN</div>
+                  <div>Qty.</div>
+                  <div>Rate</div>
+                  <div>Amount</div>
+                </div>
+
+                <!-- Table Body -->
+                <div class="bd" id="bd">
+                  <!-- Rows List -->
+                  <div id="rows"></div>
+
+                  <div class="add-btn-wrap noprint">
+                    <button class="btn-add" id="bAdd">+ Add Item Row</button>
+                  </div>
+
+                  <!-- Total Row -->
+                  <div class="tot">
+                    <div>TOTAL</div>
+                    <div id="total">1,03,041/-</div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Bottom Footer -->
+              <div class="bt">
+                <div class="l">
+                  <div><b>Rupees:-</b> <span id="words">One Lakh Three Thousand & Forty One Only.</span></div>
+                  <div class="u-line"></div>
+                </div>
+                <div class="r">
+                  <div class="for-co">For <b>Hanuman Enterprise</b></div>
+                  <div class="auth">Authorised Sign.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sidebar -->
+  <aside>
+    <h2>
+      <span>Saved Invoices</span>
+      <span id="saved-count" class="badge">0</span>
+    </h2>
+
+    <div class="search-box">
+      <input id="q" placeholder="🔍 Search bill no. or customer...">
+    </div>
+
+    <div class="selection-toolbar">
+      <span>Select bills for Bulk Export</span>
+      <div>
+        <button id="bSelectAll" type="button">Select All</button>
+        <button id="bClearSelect" type="button">Clear</button>
+      </div>
+    </div>
+
+    <div id="list"></div>
+
+    <div class="sidebar-footer">
+      <button id="bBulkExport" class="bulk-btn bulk-export-btn">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="2" y="7" width="16" height="14" rx="2"/><path d="M6 3h14a2 2 0 012 2v12"/></svg>
+        <span id="bulk-btn-text">BULK BILL EXPORT PDF</span>
+      </button>
+    </div>
+  </aside>
+</main>
+
+<div id="toast"></div>
+
+<script>
+const $ = s => document.querySelector(s);
+const pad = n => String(n).padStart(2, '0');
+
+const blank = () => ({
+  desc: '',
+  detail: '',
+  hsn: '',
+  qty: '1',
+  rate: ''
+});
+
+// Sample invoice matching user's exact template
+let S = {
+  id: 'inv-10',
+  no: '10',
+  date: '31-01-2027',
+  vendor: 'Straw Express Exports',
+  address: 'G.I.D.C., Umbergaon.',
+  items: [
+    {
+      desc: 'Factory Rent',
+      detail: '1st January 2027 To 31st January 2027',
+      hsn: '',
+      qty: '1',
+      rate: '103041'
+    }
+  ]
+};
+
+let docs = [];
+let selectedIds = new Set();
+let delArm = null;
+const LK = 'hanuman_enterprise_invoices_v3';
+
+const toast = m => {
+  const t = $('#toast');
+  t.textContent = m;
+  t.classList.add('show');
+  clearTimeout(toast.h);
+  toast.h = setTimeout(() => t.classList.remove('show'), 2800);
+};
+
+const today = () => {
+  const d = new Date();
+  return pad(d.getDate()) + '-' + pad(d.getMonth() + 1) + '-' + d.getFullYear();
+};
+
+const nextNo = () => {
+  let m = 0;
+  docs.forEach(d => {
+    const n = parseInt(d.no, 10);
+    if (!isNaN(n) && n > m) m = n;
+  });
+  return pad(m + 1);
+};
+
+const num = t => parseFloat(String(t || '').replace(/[^0-9.\-]/g, '')) || 0;
+
+const fmt = n => {
+  if (isNaN(n) || n === 0) return '0';
+  return n.toLocaleString('en-IN', {
+    minimumFractionDigits: Number.isInteger(n) ? 0 : 2,
+    maximumFractionDigits: 2
+  });
+};
+
+const esc = s => String(s || '').replace(/[&<>"]/g, c => ({
+  '&': '&amp;',
+  '<': '&lt;',
+  '>': '&gt;',
+  '"': '&quot;'
+}[c]));
+
+/* Number to Indian Rupees Words */
+const O = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'];
+const T = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
+const two = n => n < 20 ? O[n] : T[Math.floor(n / 10)] + (n % 10 ? ' ' + O[n % 10] : '');
+
+function words(n) {
+  if (!n) return '';
+  const p = [];
+  [
+    [1e7, 'Crore'],
+    [1e5, 'Lakh'],
+    [1e3, 'Thousand'],
+    [100, 'Hundred']
+  ].forEach(([v, l]) => {
+    const q = Math.floor(n / v);
+    if (q) {
+      p.push((v > 100 && q >= 100 ? words(q) : two(q)) + ' ' + l);
+      n %= v;
+    }
+  });
+  let s = p.join(' ');
+  if (n) s += (s ? ' & ' : '') + two(n);
+  return s;
+}
+
+function inWords(total) {
+  const r = Math.floor(total + 1e-9);
+  const ps = Math.round((total - r) * 100);
+  if (!total) return '';
+  let s = r ? words(r) : '';
+  if (ps) s += (s ? ' Rupees and ' : '') + two(ps) + ' Paise';
+  return s + ' Only.';
+}
+
+/* Render Rows */
+function rowHTML(it, i) {
+  const rateVal = num(it.rate);
+  const qtyVal = num(it.qty) || 1;
+  const amtVal = Math.round(qtyVal * rateVal * 100) / 100;
+
+  return `
+  <div class="row" data-i="${i}">
+    <div class="sr">${i + 1}.</div>
+    <div class="d">
+      <div class="t" contenteditable="plaintext-only" data-k="desc" data-ph="Item Description">${esc(it.desc)}</div>
+      <div class="sub" contenteditable="plaintext-only" data-k="detail" data-ph="Details / Date range">${esc(it.detail)}</div>
+    </div>
+    <div class="hsn" contenteditable="plaintext-only" data-k="hsn" data-ph="">${esc(it.hsn)}</div>
+    <div class="q" contenteditable="plaintext-only" data-k="qty" data-ph="1">${esc(it.qty)}</div>
+    <div class="r" contenteditable="plaintext-only" data-k="rate" data-ph="0">${rateVal ? fmt(rateVal) + '/-' : ''}</div>
+    <div class="a">${amtVal ? fmt(amtVal) + '/-' : ''}</div>
+    <button class="x noprint" title="Delete Row">×</button>
+  </div>`;
+}
+
+function draw() {
+  $('#no').textContent = S.no || '';
+  $('#date').textContent = S.date || '';
+  $('#vendor').textContent = S.vendor || '';
+  $('#address').textContent = S.address || '';
+  $('#bill-indicator').innerHTML = `Bill No: <b>${esc(S.no || '--')}</b>`;
+
+  $('#rows').innerHTML = S.items.map(rowHTML).join('');
+  calc();
+  markList();
+  fit();
+}
+
+function readDom() {
+  S.no = $('#no').textContent.trim();
+  S.date = $('#date').textContent.trim();
+  S.vendor = $('#vendor').textContent.trim();
+  S.address = $('#address').textContent.trim();
+  S.items = [...document.querySelectorAll('#rows .row')].map(r => {
+    const g = k => {
+      const el = r.querySelector(`[data-k="${k}"]`);
+      return el ? el.textContent.trim() : '';
+    };
+    return {
+      desc: g('desc'),
+      detail: g('detail'),
+      hsn: g('hsn'),
+      qty: g('qty'),
+      rate: String(num(g('rate')) || '')
+    };
+  });
+  return S;
+}
+
+function calc() {
+  let tot = 0;
+  document.querySelectorAll('#rows .row').forEach(r => {
+    const qEl = r.querySelector('[data-k="qty"]');
+    const rEl = r.querySelector('[data-k="rate"]');
+    const q = num(qEl ? qEl.textContent : '1') || 1;
+    const rt = num(rEl ? rEl.textContent : '0');
+    const a = Math.round(q * rt * 100) / 100;
+    tot += a;
+    const aEl = r.querySelector('.a');
+    if (aEl) aEl.textContent = a ? fmt(a) + '/-' : '';
+  });
+  tot = Math.round(tot * 100) / 100;
+  $('#total').textContent = tot ? fmt(tot) + '/-' : '0/-';
+  $('#words').textContent = inWords(tot);
+  return tot;
+}
+
+function fit() {
+  const stage = $('#stage');
+  if (!stage) return;
+  const avail = stage.clientWidth - 32;
+  const s = Math.min(1, Math.max(0.35, avail / 794));
+  const sc = $('#scaler');
+  sc.style.transform = `scale(${s})`;
+  $('#wrap').style.width = (794 * s) + 'px';
+  $('#wrap').style.height = (sc.offsetHeight * s) + 'px';
+}
+window.addEventListener('resize', fit);
+
+/* Sheet Event Handlers */
+const sheet = $('#sheet');
+sheet.addEventListener('input', () => {
+  calc();
+  fit();
+  autoSave();
+});
+
+sheet.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    if (e.target.dataset && e.target.dataset.k === 'detail') {
+      // allow newline in details
+    } else {
+      e.preventDefault();
+    }
+  }
+});
+
+sheet.addEventListener('focusin', e => {
+  const t = e.target;
+  if (t.dataset && t.dataset.k === 'rate') {
+    const v = num(t.textContent);
+    t.textContent = v ? String(v) : '';
+  }
+});
+
+sheet.addEventListener('focusout', e => {
+  const t = e.target;
+  if (t.dataset && t.dataset.k === 'rate') {
+    const v = num(t.textContent);
+    t.textContent = v ? fmt(v) + '/-' : '';
+  }
+  autoSave();
+});
+
+sheet.addEventListener('click', e => {
+  if (e.target.classList.contains('x')) {
+    readDom();
+    const rowEl = e.target.closest('.row');
+    const i = +rowEl.dataset.i;
+    if (S.items.length > 1) {
+      S.items.splice(i, 1);
+    } else {
+      S.items = [blank()];
+    }
+    draw();
+    autoSave();
+  }
+});
+
+$('#bAdd').onclick = () => {
+  readDom();
+  S.items.push(blank());
+  draw();
+  autoSave();
+};
+
+$('#bNew').onclick = () => {
+  readDom();
+  S = {
+    id: 'inv-' + Date.now(),
+    no: nextNo(),
+    date: today(),
+    vendor: '',
+    address: '',
+    items: [blank()]
+  };
+  selectedIds.add(S.id);
+  draw();
+  toast('Created new blank invoice #' + S.no);
+};
+
+/* Storage and Persistence */
+function getStorage() {
+  try {
+    return JSON.parse(localStorage.getItem(LK) || '[]');
+  } catch (_) {
+    return [];
+  }
+}
+
+function setStorage(arr) {
+  try {
+    localStorage.setItem(LK, JSON.stringify(arr));
+  } catch (err) {
+    console.error('Storage full or error:', err);
+  }
+  docs = arr;
+  markList();
+}
+
+function autoSave() {
+  readDom();
+  if (!S.id) S.id = 'inv-' + Date.now();
+  const list = getStorage();
+  const idx = list.findIndex(x => x.id === S.id);
+  const rec = {
+    ...S,
+    total: calc(),
+    updatedAt: Date.now()
+  };
+  if (idx >= 0) {
+    list[idx] = rec;
+  } else {
+    list.unshift(rec);
+  }
+  setStorage(list);
+}
+
+function saveExplicit() {
+  readDom();
+  if (!S.no) {
+    toast('⚠️ Bill number is required');
+    return false;
+  }
+  if (!S.vendor) {
+    toast('⚠️ Customer / Vendor name is required');
+    return false;
+  }
+  if (!S.id) S.id = 'inv-' + Date.now();
+  
+  const list = getStorage();
+  const idx = list.findIndex(x => x.id === S.id);
+  const rec = {
+    ...S,
+    total: calc(),
+    updatedAt: Date.now()
+  };
+  if (idx >= 0) {
+    list[idx] = rec;
+  } else {
+    list.unshift(rec);
+  }
+  setStorage(list);
+  selectedIds.add(S.id);
+  markList();
+  toast('✓ Invoice #' + S.no + ' Saved Successfully');
+  return true;
+}
+$('#bSave').onclick = saveExplicit;
+
+function updateBulkBtnText() {
+  const count = selectedIds.size;
+  const btnText = $('#bulk-btn-text');
+  if (btnText) {
+    btnText.textContent = count > 0 
+      ? `BULK EXPORT (${count} SELECTED) PDF` 
+      : `BULK EXPORT ALL (${docs.length}) PDF`;
+  }
+}
+
+function markList() {
+  const q = ($('#q').value || '').toLowerCase();
+  const listEl = $('#list');
+  $('#saved-count').textContent = docs.length;
+
+  const rows = docs.filter(d => {
+    const text = (d.no + ' ' + d.vendor + ' ' + (d.address || '')).toLowerCase();
+    return text.includes(q);
+  }).sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
+
+  if (!rows.length) {
+    listEl.innerHTML = `<div style="text-align:center;padding:30px 10px;color:var(--tx-muted);font-size:12px;">No invoices found.<br>Click <b>Save</b> to store this invoice.</div>`;
+    updateBulkBtnText();
+    return;
+  }
+
+  listEl.innerHTML = rows.map(d => {
+    const isChecked = selectedIds.has(d.id);
+    const isActive = S && S.id === d.id;
+    return `
+    <div class="invoice-card ${isActive ? 'active' : ''}" data-id="${d.id}">
+      <input type="checkbox" class="invoice-checkbox" data-chk="${d.id}" ${isChecked ? 'checked' : ''} title="Select for Bulk Export">
+      <div class="invoice-card-info" data-load="${d.id}">
+        <b>#${esc(d.no || '--')} · ${esc(d.vendor || 'Untitled')}</b>
+        <span>📅 ${esc(d.date || '')} &nbsp;•&nbsp; <b>₹${fmt(d.total || 0)}</b></span>
+      </div>
+      <div class="invoice-card-actions">
+        <button data-del="${d.id}" title="Delete Invoice" style="color:var(--danger)">
+          ${delArm === d.id ? 'Confirm?' : '🗑️'}
+        </button>
+      </div>
+    </div>`;
+  }).join('');
+
+  updateBulkBtnText();
+}
+$('#q').oninput = markList;
+
+/* Selection handling */
+$('#bSelectAll').onclick = () => {
+  docs.forEach(d => selectedIds.add(d.id));
+  markList();
+  toast(`Selected all ${docs.length} invoices`);
+};
+
+$('#bClearSelect').onclick = () => {
+  selectedIds.clear();
+  markList();
+  toast('Cleared invoice selections');
+};
+
+$('#list').addEventListener('click', e => {
+  const chk = e.target.closest('[data-chk]');
+  const delId = e.target.dataset.del || e.target.closest('[data-del]')?.dataset.del;
+  const loadId = e.target.closest('[data-load]')?.dataset.load;
+
+  if (chk) {
+    const id = chk.dataset.chk;
+    if (chk.checked) {
+      selectedIds.add(id);
+    } else {
+      selectedIds.delete(id);
+    }
+    updateBulkBtnText();
+    return;
+  }
+
+  if (delId) {
+    e.stopPropagation();
+    if (delArm === delId) {
+      selectedIds.delete(delId);
+      const filtered = docs.filter(x => x.id !== delId);
+      setStorage(filtered);
+      delArm = null;
+      if (S && S.id === delId) {
+        S = filtered[0] || {
+          id: 'inv-' + Date.now(),
+          no: '01',
+          date: today(),
+          vendor: '',
+          address: '',
+          items: [blank()]
+        };
+        draw();
+      }
+      toast('Invoice deleted');
+    } else {
+      delArm = delId;
+      markList();
+      setTimeout(() => {
+        if (delArm === delId) {
+          delArm = null;
+          markList();
+        }
+      }, 3000);
+    }
+    return;
+  }
+
+  if (loadId) {
+    const d = docs.find(x => x.id === loadId);
+    if (d) {
+      S = JSON.parse(JSON.stringify(d));
+      draw();
+      toast('Loaded Bill #' + (S.no || ''));
+    }
+  }
+});
+
+/* Print Action */
+$('#bPrint').onclick = () => {
+  readDom();
+  calc();
+  window.print();
+};
+
+/* =========================================================
+   GENERATE PERFECT INVOICE DOM FOR PDF CAPTURE
+   Ensures continuous, seamless, perfectly straight vertical lines
+   ========================================================= */
+function createInvoiceNodeForCapture(invData) {
+  let tot = 0;
+  const rowsHTML = (invData.items || []).map((it, i) => {
+    const q = num(it.qty) || 1;
+    const rt = num(it.rate);
+    const a = Math.round(q * rt * 100) / 100;
+    tot += a;
+    return `
+    <div style="display:grid;grid-template-columns:40px 290px 75px 75px 90px 1fr;min-height:28px;font-size:13px;color:#000000;position:relative;">
+      <div style="padding:8px 6px 2px;text-align:center;font-weight:500;">${i + 1}.</div>
+      <div style="padding:8px 6px 2px 8px;">
+        <div style="font-weight:700;color:#000000;margin-bottom:2px;">${esc(it.desc)}</div>
+        <div style="font-weight:400;color:#000000;font-size:12.5px;">${esc(it.detail)}</div>
+      </div>
+      <div style="padding:8px 6px 2px;text-align:center;">${esc(it.hsn)}</div>
+      <div style="padding:8px 6px 2px;text-align:center;font-weight:500;">${esc(it.qty)}</div>
+      <div style="padding:8px 6px 2px;text-align:center;font-weight:700;font-size:13px;">${rt ? fmt(rt) + '/-' : ''}</div>
+      <div style="padding:8px 6px 2px;text-align:center;font-weight:700;font-size:13px;">${a ? fmt(a) + '/-' : ''}</div>
+    </div>`;
+  }).join('');
+
+  tot = Math.round(tot * 100) / 100;
+  const wordsText = inWords(tot);
+
+  const container = document.createElement('div');
+  container.style.cssText = `
+    width: 794px;
+    height: 1123px;
+    background: #ffffff;
+    color: #000000;
+    font-family: Arial, Helvetica, sans-serif;
+    padding: 75px 50px 50px 50px;
+    box-sizing: border-box;
+    position: relative;
+    overflow: hidden;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: geometricPrecision;
+  `;
+
+  container.innerHTML = `
+    <div style="text-align:center;margin-bottom:6px;width:100%;">
+      <div style="text-align:center;font-size:14.5px;font-weight:500;text-decoration:underline;color:#000000;margin-bottom:2px;">Tax Invoice</div>
+      <div style="text-align:center;font-family:Rockwell,Clarendon,'Bookman Old Style',Georgia,serif;font-weight:900;font-size:34px;line-height:1.15;letter-spacing:0.5px;color:#000000;margin:4px 0 2px;text-transform:uppercase;">HANUMAN ENTERPRISE</div>
+      <div style="text-align:center;font-size:13.5px;font-weight:500;color:#000000;margin-bottom:6px;">Proprietor - Dharmesh Hansrajbhai Nayak</div>
+      <div style="border-top:1.8px solid #000000;margin:8px 0;width:100%;"></div>
+      <div style="text-align:center;font-size:12px;line-height:16.5px;color:#000000;">Plot No. 39, New G.I.D.C., 52 Hector, Umbergaon, Tal. Umbergaon, Dist. Valsad - 396171, Gujarat.</div>
+      <div style="text-align:center;font-size:12px;line-height:16.5px;color:#000000;">E-mail :- dhnayak3608@gmail.com &nbsp;●&nbsp; Mob.:- 9227433604</div>
+    </div>
+
+    <div style="margin-top:10px;border:1.8px solid #000000;border-radius:8px;overflow:hidden;background:#ffffff;width:100%;">
+      <div style="display:grid;grid-template-columns:480px 1fr;height:90px;border-bottom:1.8px solid #000000;">
+        <div style="border-right:1.8px solid #000000;padding:6px 8px 0 8px;font-size:13.5px;display:flex;flex-direction:column;">
+          <div style="display:flex;align-items:flex-end;height:35px;border-bottom:1.4px solid #000000;margin-bottom:6px;">
+            <b style="font-size:14px;font-weight:700;color:#000000;margin-right:4px;padding-bottom:2px;">M/s.</b>
+            <div style="flex:1;padding:0 4px 2px;color:#000000;font-size:13.5px;font-weight:500;white-space:nowrap;overflow:hidden;">${esc(invData.vendor || '')}</div>
+          </div>
+          <div style="display:flex;align-items:flex-end;height:35px;border-bottom:1.4px solid #000000;">
+            <div style="flex:1;padding:0 4px 2px;color:#000000;font-size:13.5px;font-weight:500;white-space:nowrap;overflow:hidden;">${esc(invData.address || '')}</div>
+          </div>
+        </div>
+        <div style="padding:12px 14px 0 14px;font-size:14px;">
+          <p style="margin:0 0 12px;font-weight:700;color:#000000;">Bill No.:- <span style="font-size:13.5px;font-weight:700;margin-left:6px;">${esc(invData.no || '')}</span></p>
+          <p style="margin:0;font-weight:700;color:#000000;">Date :- <span style="font-size:13.5px;font-weight:700;margin-left:6px;">${esc(invData.date || '')}</span></p>
+        </div>
+      </div>
+
+      <!-- Unified Table Box: Continuous Vertical Dividers -->
+      <div style="position:relative;background:#ffffff;">
+        <i style="position:absolute;top:0;bottom:0;width:0;border-left:1.8px solid #000000;left:40px;z-index:5;"></i>
+        <i style="position:absolute;top:0;bottom:0;width:0;border-left:1.8px solid #000000;left:330px;z-index:5;"></i>
+        <i style="position:absolute;top:0;bottom:0;width:0;border-left:1.8px solid #000000;left:405px;z-index:5;"></i>
+        <i style="position:absolute;top:0;bottom:0;width:0;border-left:1.8px solid #000000;left:480px;z-index:5;"></i>
+        <i style="position:absolute;top:0;bottom:0;width:0;border-left:1.8px solid #000000;left:570px;z-index:5;"></i>
+
+        <div style="display:grid;grid-template-columns:40px 290px 75px 75px 90px 1fr;height:36px;border-bottom:1.8px solid #000000;font-weight:700;font-size:14px;color:#000000;background:#ffffff;position:relative;z-index:2;">
+          <div style="display:flex;align-items:center;justify-content:center;text-align:center;line-height:14px;">Sr.<br>No.</div>
+          <div style="display:flex;align-items:center;justify-content:center;text-align:center;">Description</div>
+          <div style="display:flex;align-items:center;justify-content:center;text-align:center;">HSN</div>
+          <div style="display:flex;align-items:center;justify-content:center;text-align:center;">Qty.</div>
+          <div style="display:flex;align-items:center;justify-content:center;text-align:center;">Rate</div>
+          <div style="display:flex;align-items:center;justify-content:center;text-align:center;">Amount</div>
+        </div>
+
+        <div style="position:relative;height:615px;background:#ffffff;z-index:2;">
+          <div style="position:relative;">${rowsHTML}</div>
+
+          <div style="position:absolute;right:0;bottom:0;left:480px;display:grid;grid-template-columns:90px 1fr;height:32px;border-top:1.8px solid #000000;font-weight:700;background:#ffffff;z-index:3;">
+            <div style="display:flex;align-items:center;justify-content:center;font-size:14px;color:#000000;">TOTAL</div>
+            <div style="display:flex;align-items:center;justify-content:center;font-size:14px;color:#000000;font-weight:700;">${tot ? fmt(tot) + '/-' : '0/-'}</div>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:480px 1fr;height:90px;border-top:1.8px solid #000000;background:#ffffff;">
+        <div style="border-right:1.8px solid #000000;padding:8px 10px;font-size:13.5px;position:relative;display:flex;flex-direction:column;">
+          <div><b style="font-size:14px;font-weight:700;color:#000000;margin-right:4px;">Rupees:-</b> <span style="font-weight:500;color:#000000;line-height:18px;">${wordsText}</span></div>
+          <div style="position:absolute;left:36px;right:12px;bottom:24px;border-top:1.4px solid #000000;"></div>
+        </div>
+        <div style="padding:8px 12px;font-size:13.5px;display:flex;flex-direction:column;justify-content:space-between;text-align:center;">
+          <div style="font-size:13.5px;color:#000000;">For <b style="font-size:14.5px;font-weight:700;">Hanuman Enterprise</b></div>
+          <div style="font-size:13.5px;font-weight:700;color:#000000;text-align:right;padding-right:6px;padding-bottom:2px;">Authorised Sign.</div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  return container;
+}
+
+/* Single PDF Export */
+$('#bPdf').onclick = async () => {
+  const b = $('#bPdf');
+  b.disabled = true;
+  const origText = b.innerHTML;
+  b.innerHTML = `<span>⏳ Exporting HD PDF...</span>`;
+
+  try {
+    readDom();
+    calc();
+
+    const host = document.createElement('div');
+    host.style.cssText = 'position:fixed;left:-9999px;top:0;width:794px;height:1123px;background:#ffffff;z-index:-9999;';
+    const invoiceEl = createInvoiceNodeForCapture(S);
+    host.appendChild(invoiceEl);
+    document.body.appendChild(host);
+
+    const cv = await html2canvas(invoiceEl, {
+      scale: 3,
+      width: 794,
+      height: 1123,
+      backgroundColor: '#ffffff',
+      useCORS: true,
+      logging: false,
+      allowTaint: true
+    });
+
+    host.remove();
+
+    const imgData = cv.toDataURL('image/png');
+    const pdf = new jspdf.jsPDF({
+      orientation: 'portrait',
+      unit: 'mm',
+      format: 'a4',
+      compress: true
+    });
+
+    pdf.addImage(imgData, 'PNG', 0, 0, 210, 297, undefined, 'FAST');
+
+    const cleanName = (S.vendor || 'Bill').replace(/[^a-zA-Z0-9_-]/g, '_');
+    const fileName = `Hanuman_Enterprise_Bill_${S.no || '01'}_${cleanName}.pdf`;
+
+    pdf.save(fileName);
+    toast('✓ Exported HD PDF: ' + fileName);
+  } catch (err) {
+    console.error('PDF Export Error:', err);
+    toast('⚠️ PDF Export failed: ' + (err.message || err));
+  } finally {
+    b.disabled = false;
+    b.innerHTML = origText;
+  }
+};
+
+/* =========================================================
+   BULK EXPORT SELECTED INVOICES TO SINGLE MULTI-PAGE PDF
+   ========================================================= */
+async function runBulkExport() {
+  readDom();
+  autoSave();
+
+  let targetInvoices = [];
+  if (selectedIds.size > 0) {
+    targetInvoices = docs.filter(d => selectedIds.has(d.id));
+  } else {
+    // If none explicitly selected, export all saved invoices
+    targetInvoices = docs;
+  }
+
+  if (!targetInvoices.length) {
+    toast('⚠️ No invoices available to export. Save some invoices first.');
+    return;
+  }
+
+  const btn = $('#bBulkExport');
+  const btnHeader = $('#bBulkHeader');
+  btn.disabled = true;
+  btnHeader.disabled = true;
+  const origBtnText = btn.innerHTML;
+
+  try {
+    toast(`Starting Bulk PDF Export of ${targetInvoices.length} invoices...`);
+
+    const pdf = new jspdf.jsPDF({
+      orientation: 'portrait',
+      unit: 'mm',
+      format: 'a4',
+      compress: true
+    });
+
+    const host = document.createElement('div');
+    host.style.cssText = 'position:fixed;left:-9999px;top:0;width:794px;height:1123px;background:#ffffff;z-index:-9999;';
+    document.body.appendChild(host);
+
+    for (let i = 0; i < targetInvoices.length; i++) {
+      const inv = targetInvoices[i];
+      btn.innerHTML = `<span>⏳ Processing ${i + 1} of ${targetInvoices.length} (Bill #${inv.no})...</span>`;
+      
+      host.innerHTML = '';
+      const invoiceEl = createInvoiceNodeForCapture(inv);
+      host.appendChild(invoiceEl);
+
+      const cv = await html2canvas(invoiceEl, {
+        scale: 2.8,
+        width: 794,
+        height: 1123,
+        backgroundColor: '#ffffff',
+        useCORS: true,
+        logging: false,
+        allowTaint: true
+      });
+
+      const imgData = cv.toDataURL('image/png');
+      if (i > 0) {
+        pdf.addPage('a4', 'portrait');
+      }
+      pdf.addImage(imgData, 'PNG', 0, 0, 210, 297, undefined, 'FAST');
+    }
+
+    host.remove();
+
+    const fileName = `Hanuman_Enterprise_Bulk_${targetInvoices.length}_Bills_${today()}.pdf`;
+    pdf.save(fileName);
+    toast(`✓ Successfully Exported ${targetInvoices.length} Bills to ${fileName}`);
+  } catch (err) {
+    console.error('Bulk Export Error:', err);
+    toast('⚠️ Bulk Export failed: ' + (err.message || err));
+  } finally {
+    btn.disabled = false;
+    btnHeader.disabled = false;
+    btn.innerHTML = origBtnText;
+    updateBulkBtnText();
+  }
+}
+
+$('#bBulkExport').onclick = runBulkExport;
+$('#bBulkHeader').onclick = runBulkExport;
+
+/* Initialization */
+(function init() {
+  const existing = getStorage();
+  if (existing.length > 0) {
+    docs = existing;
+    S = docs[0];
+  } else {
+    // Save sample invoice matching user's template as first record
+    docs = [S];
+    setStorage(docs);
+  }
+  selectedIds.add(S.id);
+  draw();
+  setTimeout(fit, 100);
+})();
+</script>
+</body>
+</html>
